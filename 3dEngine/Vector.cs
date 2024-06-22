@@ -1,49 +1,91 @@
 ﻿
+using System.Numerics;
+
 namespace _3dEngine
 {
     internal class Vec3
     {
-        public float x, y, z;
-        public Vec3(float _x, float _y, float _z ) { 
-            x = _x; y = _y; z = _z;
+        public float X, Y, Z;
+
+        public Vec3(float x, float y, float z ) { 
+            X = x; Y = y; Z = z;
         }
         public Vec3()
         {
-            x = 0; y = 0; z = 0;
+            X = 0; Y = 0; Z = 0;
+        }
+
+        public string toString()
+        {
+            return $"<{X},{Y},{Z}>";
         }
         public Matrix Matrix() { 
-            return new Matrix( new float[,] {{ x, y, z, 1 }} ).Transposed();
-        }
-        public static Vec3 Mult( Vec3 lhs, float n)
-        {
-            return new Vec3(lhs.x * n, lhs.y * n, lhs.z * n);
-        }
-        public static Vec3 Div(Vec3 lhs, float n)
-        {
-            return Mult(lhs, 1/n);
-        }
-        public static Vec3 operator *(Vec3 lhs, float n) {
-            return Mult(lhs, n);
-        }
-        public static Vec3 operator *(Vec3 vec, Matrix m1)
-        {
-            Matrix m2 = vec.Matrix();
-            Matrix m3 = m1 * m2;
-            return new Vec3(m1[0, 0], m1[1,0], m1[2, 0]);
-        }
-        public static Vec3 operator /(Vec3 lhs, float n)
-        {
-            return Div(lhs, n);
+            return new Matrix( new float[,] {{ X, Y, Z, 1 }} );
         }
         public float Length()
         {
-            return MathF.Sqrt( x*x + y*y + z*z );
+            return MathF.Sqrt( X*X + Y*Y + Z*Z );
         }
         public Vec3 Normalized()
         {
-            return new Vec3();
+            return this / this.Length();
+        }
+
+        public static Vec3 UnitY => new Vec3(0, 1, 0);
+        public static Vec3 UnitZ => new Vec3(0, 0, 1);
+        public static Vec3 UnitX => new Vec3(1, 0, 0);
+
+        public static Vec3 Mult( Vec3 lhs, float n)
+        {
+            return new Vec3(lhs.X * n, lhs.Y * n, lhs.Z * n);
+        }
+
+        public static Vec3 operator *(Vec3 lhs, float n) {
+            return Mult(lhs, n);
+        }
+        public static Vec3 operator /(Vec3 lhs, float n)
+        {
+            return Mult(lhs, 1/n);
+        }
+        public static Vec3 operator -(Vec3 vec)
+        {
+            return new Vec3(-vec.X, -vec.Y, -vec.Z);
+        }
+        public static Vec3 operator +(Vec3 lhs, Vec3 rhs)
+        {
+            return new Vec3(lhs.X+rhs.X, lhs.Y+rhs.Y, lhs.Z+rhs.Z);
+        }
+        public static Vec3 operator -(Vec3 lhs, Vec3 rhs)
+        {
+            return new Vec3(lhs.X - rhs.X, lhs.Y - rhs.Y, lhs.Z - rhs.Z);
+        }
+        public static float operator *(Vec3 lhs, Vec3 rhs)
+        {
+            return lhs.X * rhs.X + lhs.Y * rhs.Y + lhs.Z * rhs.Z;
+        }
+        public static Vec3 operator *(Vec3 vec, Matrix xform)
+        {
+            Matrix vmat = vec.Matrix();
+            Matrix m3 = vmat * xform;
+            return new Vec3(m3[0, 0], m3[0,1], m3[0, 2]);
+        }
+        public static Vec3 Cross(Vec3 a, Vec3 b)
+        {
+            return new Vec3(
+                a.Y * b.Z - a.Z * b.Y,
+                a.Z * b.X - a.X * b.Z,
+                a.X * b.Y - a.Y * b.X
+            );
         }
     }
+
+    class Basis
+    {
+        public Vec3 X;  
+        public Vec3 Y;
+        public Vec3 Z;
+    }
+
     class Vec3Pool
     {
         public int size;

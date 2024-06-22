@@ -10,6 +10,7 @@ namespace _3dEngine
             Meshes = new List<Mesh>();
             Lights = new List<Light>();
         }
+
         public void Add(Mesh mesh)
         {
             Meshes.Add(mesh);

@@ -12,7 +12,6 @@ namespace _3dEngine
             this.color = color;
             this.position = position;   
         }
-
      }
 
     class DirectionalLight : Light

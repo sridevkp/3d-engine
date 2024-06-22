@@ -1,11 +1,13 @@
 ﻿
+using System.Numerics;
+
 namespace _3dEngine
 {
     internal class Matrix
     {
         public int row { get; }
         public int col { get; }
-        private float[,] mat ;
+        public float[,] mat { get; private set; }
 
         public Matrix(int _row, int _col)
         {
@@ -19,6 +21,7 @@ namespace _3dEngine
             row = mat.GetLength(0);
             col = mat.GetLength(1);
         }
+
         public void print()
         {
             for (int i = 0; i < row; i++)
@@ -30,6 +33,16 @@ namespace _3dEngine
                 }
                 Console.Write('\n');
             }
+        }
+        public Matrix Transposed()
+        {
+            Matrix transposed = new Matrix( col, row );
+            for (int i = 0; i < col; i++) {
+                for (int j = 0; j < row; j++) {
+                    transposed[i, j] = this[j, i];
+                }
+            }
+            return transposed;
         }
         public float this[int i, int j] {
             get
@@ -51,16 +64,7 @@ namespace _3dEngine
                 mat[i, j] = value;
             }
         }
-        public Matrix Transposed()
-        {
-            Matrix transposed = new Matrix( col, row );
-            for (int i = 0; i < col; i++) {
-                for (int j = 0; j < row; j++) {
-                    transposed[i, j] = this[j, i];
-                }
-            }
-            return transposed;
-        }
+
         public static Matrix ScalarMultiply( Matrix m, float n )
         {
             Matrix result = new Matrix(m.row, m.col);
@@ -94,6 +98,7 @@ namespace _3dEngine
         {
             return Add(m1, ScalarMultiply( m2, -1));
         }
+
         public static Matrix operator +(Matrix m1, Matrix m2)
         {
             return Add(m1, m2);
@@ -126,9 +131,10 @@ namespace _3dEngine
         }
         public static Matrix operator *(Matrix m1, Vec3 vec)
         {
-            Matrix m2 = new Matrix(new float[,] { { vec.x, vec.y, vec.z, 1 } });
+            Matrix m2 = new Matrix(new float[,] { { vec.X, vec.Y, vec.Z, 1 } });
             return m1 * m2;
         }
+
         public static Matrix Identity(int dim)
         {
             Matrix mat = new Matrix(dim, dim);
@@ -137,6 +143,10 @@ namespace _3dEngine
                 mat[i, i] = 1;
             }
             return mat;
+        }
+        public static Matrix MatrixScale(float X, float Y, float Z)
+        {
+            return Identity(4);
         }
         public static Matrix MatrixTranslation(float tx, float ty, float tz)
         {
@@ -175,6 +185,17 @@ namespace _3dEngine
             mat[3, 2] = (-far * near) / (far - near);
             return mat;
         }
+        public static Matrix LookAt( Vec3 pos, Vec3 target, Vec3 up)
+        {
+            Vec3 f = (target - pos).Normalized();
+            Vec3 s = Vec3.Cross(f, up).Normalized();
+            Vec3 u = Vec3.Cross(s, f);
 
+            return new Matrix( new float[,]{
+                { s.X, u.X, -f.X, 0 },
+                { s.Y, u.Y, -f.Y, 0},
+                { s.Z, u.Z, -f.Z, 0},
+                { -s * pos, -u * pos, f* pos, 1}});
+        }
     }
 }

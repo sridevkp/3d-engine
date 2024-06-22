@@ -4,7 +4,7 @@ namespace _3dEngine
 {
     internal class Renderer
     {
-        public Matrix projMat ;
+        //public Matrix projMat ;
         public Camera defaultCamera;
         public Renderer( Camera _defaultCamera)
         {
@@ -14,6 +14,7 @@ namespace _3dEngine
         }
         public void Render(Scene scene)
         {
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             foreach (Mesh mesh in scene.Meshes)
             {
                 mesh.Render(defaultCamera);
@@ -21,7 +22,8 @@ namespace _3dEngine
         }
         public void Render(Scene scene, Camera camera)
         {
-            foreach( Mesh mesh in scene.Meshes)
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            foreach ( Mesh mesh in scene.Meshes)
             {
                 mesh.Render( camera );
             }

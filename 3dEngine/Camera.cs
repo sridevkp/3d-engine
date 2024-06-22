@@ -3,28 +3,27 @@ namespace _3dEngine
 {
     internal class Camera
     {
-        public float fovDegree, far, near, aspectRatio;
-        public Vec3 position, dir;
-        public Camera( float _fovDegree, float aspectRation, float _near=1, float _far=100)
+        public float FovDegree, Far, Near, AspectRatio;
+        public Vec3 Position { get; set; }
+        private Vec3 dir;
+        public Vec3 Dir { get { return dir; } set {
+                dir = value.Normalized();
+            } }
+        public Camera()
         {
-            fovDegree = _fovDegree;
-            dir = new Vec3(0, 0, 1);
-            position = new Vec3();
-            near = _near;
-            far = _far;
+            Dir = Vec3.UnitX;
+            Position = new Vec3();
         }
-        public Matrix createMatrix()
+
+        public Matrix GetViewMatrix()
         {
-            return new Matrix( 4, 4 );
+            return Matrix.LookAt( Position, Position +Dir, Vec3.UnitY);
         }
-        public Matrix getProjectionMatrix()
+        public Matrix GetProjectionMatrix()
         {
-            return Matrix.MatrixPerspectiveProjection( fovDegree, aspectRatio, near, far );
+            return Matrix.MatrixPerspectiveProjection(FovDegree, AspectRatio, Near, Far );
         }
-        public void rotateY(float yaw) { 
-            Matrix matCameraRot = Matrix.MatrixRotationY(yaw);
-            dir = dir * matCameraRot ;
-        }
+
         public static bool operator ==( Camera left, Camera right ) {
             return left.Equals(right);
         }

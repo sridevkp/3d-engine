@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Drawing;
+using System.Numerics;
 using GLFW;
 using static OpenGL.GL;
 
@@ -9,94 +10,140 @@ namespace _3dEngine
         private Window win;
         private Random random = new Random();
 
-        private int width = 1024;//screen.Width;
-        private int height = 900;//screen.Height;
+        private readonly int Width = 800;//screen.Width;
+        private readonly int Height = 800;//screen.Height;
+        float delta ;
 
         private Camera camera;
         private Scene scene;
-        //public  Timer timer;
+        private Renderer renderer;
+        private Timer timer;
+        private Vector2 Mouse ;
+
+        Cube cube;
+        private float camSpeed = 5f;
         public void Run()
         {
-            var screen = Glfw.PrimaryMonitor.WorkArea;
+            Mouse = new Vector2(Width /2, Height /2);
+            Rectangle screen = Glfw.PrimaryMonitor.WorkArea;
            
             PrepareContext();
-            win = CreateWindow("3d engine", width, height);
-            //glViewport(0, 0, width, height);
+            win = CreateWindow("3d engine", Width, Height);
+            Glfw.SetWindowPosition(win, screen.Width/2 -Width/2, screen.Height/2 -Height/2);
+            //glViewport(0, 0, Width, Height);
+            Glfw.SetCursorPositionCallback(win, MouseCallback);
+            Glfw.SetMouseButtonCallback(win, MouseButtonCallback);
+            Glfw.SetKeyCallback(win, KeyCallback);
 
-            Renderer renderer = new Renderer( camera );
 
-            //timer = new Timer(HandleTimeout, null, 10, 100);
+            timer = new Timer(HandleTimeout, null, 10, 1000);
             Setup();
 
             double previousTime = Glfw.Time;
-            double delta = 0.0;
             while (!Glfw.WindowShouldClose(win))
             {
                 double currentTime = Glfw.Time;
-                delta = currentTime - previousTime;
+                delta = (float)(currentTime - previousTime);
                 previousTime = currentTime;
-                DebugFPS(delta);
+                //DebugFPS(delta);
+                Glfw.SwapBuffers(win);
+                Glfw.PollEvents();
 
                 glClear(GL_COLOR_BUFFER_BIT);  // Clear screen
-                ProcessInput(win);             // Input handling
+                ProcessInput(win, delta);             // Input handling
                 Update(delta);                 // Update
                 renderer.Render( scene );      // Drawing
 
-                Glfw.SwapBuffers(win);
-                Glfw.PollEvents();
             }
             Glfw.Terminate();
         }
         public void Setup()
         {
-
             scene = new Scene();
-            camera = new Camera(45, width / height, 1, 100);
-            DirectionalLight light = new DirectionalLight(1, new Vec3(0, 0, 1), new Vec3(1, 1, 1));
-            
-            float[] vertices = new float[]
+            camera = new Camera()
             {
-            -0.5f, -0.5f, 0.0f,
-             0.5f, -0.5f, 0.0f,
-             0.0f,  0.5f, 0.0f
+                FovDegree = 45,
+                AspectRatio = Width / (float)Height,
+                Near = 1,
+                Far = 100,
             };
-            uint[] faces = new uint[] { 0, 1, 2 };
+            camera.Position = new Vec3(0,0,-5);
+            camera.Dir = new Vec3(0, 0, -1);
 
-            Mesh mesh = new Mesh(vertices, faces);
+            DirectionalLight light = new DirectionalLight(1, new Vec3(0, 0, 1), new Vec3(1, 1, 1));
 
-            //Cube cube = new Cube(1);
-            //scene.Add(cube);
-            scene.Add(mesh);
+            cube = new Cube(1);
+            scene.Add(cube);
             scene.Add(light);
+
+            renderer = new Renderer(camera);
         }
-        public void Update(double delta)
+        public void Update(float delta)
         {
-            //Matrix rotY = Matrix.MatrixRotationY((float)delta * 3.14f);
+            cube.rotation.X += float.Pi * delta;
+            cube.rotation.Y += float.Pi * delta;
 
         }
-        private void ProcessInput(Window win)
+        private void MouseButtonCallback(Window win, MouseButton button, InputState state, ModifierKeys mods)
         {
-            if (Glfw.GetKey(win, Keys.Escape) == InputState.Press)
-                Glfw.SetInputMode(win, InputMode.Cursor, (int)CursorMode.Normal);
-            //Glfw.SetWindowShouldClose(win, true);
-
-            if (Glfw.GetMouseButton(win, MouseButton.Left) == InputState.Press)
-                Glfw.SetInputMode(win, InputMode.Cursor, (int)CursorMode.Hidden);
-
-            if (Glfw.GetInputMode(win, InputMode.Cursor) == (int)CursorMode.Hidden)
+            if (state == InputState.Press && button == MouseButton.Left)
             {
-                Glfw.GetCursorPosition(win, out double mousex, out double mousey);
-                Glfw.SetCursorPosition(win, width / 2, height / 2);
+                Glfw.SetInputMode(win, InputMode.Cursor, (int)CursorMode.Hidden);
             }
         }
-        public void DebugFPS(double delta)
+        private void MouseCallback(Window window, double xpos, double ypos)
         {
-            float fps = (float)(1 / delta);
+            if (Glfw.GetInputMode(win, InputMode.Cursor) == (int)CursorMode.Hidden)
+            {
+                Vector2 newMouse = new Vector2((float)xpos, (float)ypos);
+                Vector2 mouseMotion = newMouse - new Vector2(Width / 2f, Height / 2f);
+                //Mouse = newMouse;
+                Glfw.SetCursorPosition(win, Width / 2, Height / 2);
+
+                camera.Dir *= Matrix.MatrixRotationY(mouseMotion.X * delta);
+                camera.Dir *= Matrix.MatrixRotationX(-mouseMotion.Y * delta);
+            }
+        }
+        private void KeyCallback(Window window, Keys key, int scancode, InputState state, ModifierKeys mods)
+        {
+            if (state == InputState.Press)
+            {
+                switch (key)
+                {
+                    case Keys.Escape:
+                        Glfw.SetInputMode(win, InputMode.Cursor, (int)CursorMode.Normal);
+                        //Glfw.SetWindowShouldClose(win, true);
+                        break;
+
+                }
+            }
+        }
+        private void ProcessInput(Window win, float delta)
+        {
+            if (Glfw.GetKey(win, Keys.Up) == InputState.Press)
+                camera.Position += new Vec3(0, camSpeed, 0) * delta;
+
+            if (Glfw.GetKey(win, Keys.Down) == InputState.Press)
+                camera.Position += new Vec3(0, -camSpeed, 0) * delta;
+
+            if (Glfw.GetKey(win, Keys.D) == InputState.Press)
+                camera.Position += new Vec3(camSpeed, 0, 0) * delta;
+
+            if (Glfw.GetKey(win, Keys.A) == InputState.Press)
+                camera.Position += new Vec3(-camSpeed, 0, 0) *delta;
+        }
+        public void HandleTimeout(object state)
+        {
+            DebugFPS();
+        }
+        public void DebugFPS()
+        {
+            float fps = (1 / delta);
             Glfw.SetWindowTitle(win, fps.ToString());
         }
-        private Window CreateWindow(string title, int width, int height)
+        private Window CreateWindow(string title, int Width, int Height)
         {
-            Window window = Glfw.CreateWindow(width, height, title, GLFW.Monitor.None, Window.None);
+            Window window = Glfw.CreateWindow(Width, Height, title, GLFW.Monitor.None, Window.None);
             window.Opacity = 1f;
 
             Glfw.MakeContextCurrent(window);
@@ -104,7 +151,7 @@ namespace _3dEngine
 
             return window;
         }
-        public Vector2 GetWindowPosition(Window window)
+        private Vector2 GetWindowPosition(Window window)
         {
             int x = 0, y = 0;
             Glfw.GetWindowPosition(win, out x, out y);

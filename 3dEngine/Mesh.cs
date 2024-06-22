@@ -1,5 +1,6 @@
-﻿using OpenGL;
+﻿using System.Numerics;
 using static OpenGL.GL;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace _3dEngine
 {
@@ -8,18 +9,23 @@ namespace _3dEngine
         private uint vao, vbo, ebo;
         private float[] verts;
         private uint[] faces;
+
         public Vec3 position;
         public Vec3 rotation;
+        public Vec3 scale;
+
         private Shader shader = new Shader();
+
         public Mesh(float[] _verts, uint[] _faces )
         {
             verts = _verts;
             faces = _faces;
             position = new Vec3();
             rotation = new Vec3();
+            scale    = new Vec3();
             Init();
-
         }
+
         public unsafe void Init() 
         {
             vao = glGenVertexArray();
@@ -43,19 +49,27 @@ namespace _3dEngine
             glEnableVertexAttribArray(0);
             glBindVertexArray(0);
 
-            int location = glGetUniformLocation(shader.program, "color");
-            glUniform3f(location, 1f, 0f, 0f);
+            shader.SetColor(0.7f, 0.7f, 0.5f);
         }
         public unsafe void Render( Camera camera )
         {
+            Matrix model = Matrix.MatrixScale(scale.X, scale.Y, scale.Z) *
+                            Matrix.MatrixRotationX(rotation.X) *
+                            Matrix.MatrixRotationY(rotation.Y) *
+                            Matrix.MatrixRotationZ(rotation.Z) *
+                            Matrix.MatrixTranslation(position.X, position.Y, position.Z);
+
+            Matrix view = camera.GetViewMatrix();
+            Matrix projection = camera.GetProjectionMatrix();
+
+            shader.SetMatrix4("model", model);
+            shader.SetMatrix4("view", view);
+            shader.SetMatrix4("projection", projection);
+
             shader.Activate();
             glBindVertexArray(vao);
             glDrawElements(GL_TRIANGLES, faces.Length, GL_UNSIGNED_INT, (int*)0);
         }
-        //public void ApplyTransform( Matrix transformMatrix )
-        //{
-        //    verts = verts * transformMatrix;
-        //}
 
     }
     class Cube : Mesh
