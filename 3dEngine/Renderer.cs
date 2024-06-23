@@ -15,6 +15,7 @@ namespace _3dEngine
         public void Render(Scene scene)
         {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            defaultCamera.Update();
             foreach (Mesh mesh in scene.Meshes)
             {
                 mesh.Render(defaultCamera);
@@ -23,9 +24,10 @@ namespace _3dEngine
         public void Render(Scene scene, Camera camera)
         {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            foreach ( Mesh mesh in scene.Meshes)
+            camera.Update();
+            foreach (Mesh mesh in scene.Meshes)
             {
-                mesh.Render( camera );
+                mesh.Render(camera);
             }
         }
     }

@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using System.Security;
 using static OpenGL.GL;
 using static System.Formats.Asn1.AsnWriter;
 
@@ -25,7 +26,6 @@ namespace _3dEngine
             scale    = new Vec3();
             Init();
         }
-
         public unsafe void Init() 
         {
             vao = glGenVertexArray();
@@ -59,16 +59,43 @@ namespace _3dEngine
                             Matrix.MatrixRotationZ(rotation.Z) *
                             Matrix.MatrixTranslation(position.X, position.Y, position.Z);
 
-            Matrix view = camera.GetViewMatrix();
-            Matrix projection = camera.GetProjectionMatrix();
+            Matrix view = camera.ViewMatrix;
+            Matrix projection = camera.ProjectionMatrix;
 
-            shader.SetMatrix4("model", model);
-            shader.SetMatrix4("view", view);
+            shader.SetMatrix4("model",      model     );
+            shader.SetMatrix4("view",       view      );
             shader.SetMatrix4("projection", projection);
 
             shader.Activate();
             glBindVertexArray(vao);
             glDrawElements(GL_TRIANGLES, faces.Length, GL_UNSIGNED_INT, (int*)0);
+        }
+        public static Mesh Load(string path)
+        {
+            List<float> Vertices = new List<float>();
+            List<uint> Faces = new List<uint>();
+
+            string[] lines = File.ReadAllLines(path);
+            foreach (string line in lines)
+            {
+                string[] parts = line.Split(" ", StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 0) continue;
+
+                switch (parts[0])
+                {
+                    case "v":
+                        Vertices.Add(float.Parse(parts[1]));
+                        Vertices.Add(float.Parse(parts[2]));
+                        Vertices.Add(float.Parse(parts[3]));
+                        break;
+                    case "f":
+                        Faces.Add(uint.Parse(parts[1]) - 1);
+                        Faces.Add(uint.Parse(parts[2]) - 1);
+                        Faces.Add(uint.Parse(parts[3]) - 1);
+                        break;
+                }
+            }
+            return new Mesh(Vertices.ToArray(), Faces.ToArray());
         }
 
     }

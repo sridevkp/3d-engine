@@ -1,4 +1,6 @@
 ﻿
+using System.Numerics;
+
 namespace _3dEngine
 {
     internal class Light
@@ -6,18 +8,16 @@ namespace _3dEngine
         public float intensity;
         public Vec3 position;
         public Vec3 color;
-        public Light(float intensity, Vec3 position, Vec3 color)
-        {
-            this.intensity = intensity;
-            this.color = color;
-            this.position = position;   
-        }
+        public float Ambient;
+        public float Diffuse;
+        public float Specular;
+
      }
 
     class DirectionalLight : Light
     {
         public Vec3 direction;
-        public DirectionalLight( float intensity, Vec3 direction, Vec3 color ) : base( intensity, new Vec3(), color )
+        public DirectionalLight( float intensity, Vec3 direction, Vec3 color )
         {
             this.direction = direction;
         }

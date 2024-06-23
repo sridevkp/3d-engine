@@ -150,35 +150,69 @@ namespace _3dEngine
         }
         public static Matrix MatrixTranslation(float tx, float ty, float tz)
         {
-            return new Matrix(new float[,] { { 1, 0, 0, tx },
-                                             { 0, 1, 0, ty },
-                                             { 0, 0, 1, tz },
-                                             { 0, 0, 0, 1  } });
-        }
-        public static Matrix MatrixRotationX(float angleRad) {
             return new Matrix(new float[,] { { 1, 0, 0, 0 },
-                                             { 0,  MathF.Cos(angleRad), MathF.Sin(angleRad), 0 },
-                                             { 0, -MathF.Sin(angleRad), MathF.Cos(angleRad), 0 },
-                                             { 0, 0, 0, 1 } });
-        }
-        public static Matrix MatrixRotationY(float angleRad) {
-            return new Matrix(new float[,] { { MathF.Cos(angleRad), 0, MathF.Sin(angleRad), 0 },
                                              { 0, 1, 0, 0 },
-                                             {-MathF.Sin(angleRad), 0, MathF.Cos(angleRad), 0 },
-                                             { 0, 0, 0, 1 }});
+                                             { 0, 0, 1, 0 },
+                                             {tx,ty,tz, 1  } }) ;
+        }
+        public static Matrix MatrixRotationX(float angleRad)
+        {
+            float cos = (float)Math.Cos(angleRad);
+            float sin = (float)Math.Sin(angleRad);
+            return new Matrix(new float[,] { { 1, 0,    0,   0 },
+                                             { 0,  cos, sin, 0 },
+                                             { 0, -sin, cos, 0 },
+                                             { 0, 0,    0,   1 } });
+        }
+        public static Matrix MatrixRotationY(float angleRad)
+        {
+            float cos = (float)Math.Cos(angleRad);
+            float sin = (float)Math.Sin(angleRad);
+            return new Matrix(new float[,] { { cos, 0, sin, 0 },
+                                             { 0,   1, 0,   0 },
+                                             {-sin, 0, cos, 0 },
+                                             { 0,   0, 0,   1 }});
         }
         public static Matrix MatrixRotationZ(float angleRad)
         {
-            return new Matrix(new float[,] { { MathF.Cos(angleRad), MathF.Sin(angleRad), 0, 0 },
-                                             {-MathF.Sin(angleRad), MathF.Cos(angleRad), 0, 0 },
-                                             { 0, 0, 1, 0 },
-                                             { 0, 0, 0, 1 } });
+            float cos = (float)Math.Cos(angleRad);
+            float sin = (float)Math.Sin(angleRad);
+            return new Matrix(new float[,] { { cos, sin, 0, 0 },
+                                             {-sin, cos, 0, 0 },
+                                             { 0,   0,   1, 0 },
+                                             { 0,   0,   0, 1 } });
+        }
+        public static Matrix MatrixRotationAxis(Vec3 axis, float angleRad)
+        {
+            axis = axis.Normalized();
+            float cos = (float)Math.Cos(angleRad);
+            float sin = (float)Math.Sin(angleRad);
+            float icos = 1.0f - cos;
+
+            float xx = axis.X * axis.X;
+            float yy = axis.Y * axis.Y;
+            float zz = axis.Z * axis.Z;
+            float xy = axis.X * axis.Y;
+            float xz = axis.X * axis.Z;
+            float yz = axis.Y * axis.Z;
+            float xs = axis.X * sin;
+            float ys = axis.Y * sin;
+            float zs = axis.Z * sin;
+
+            Matrix rotationMatrix = new Matrix( new float[,]{
+                { cos  + icos * xx,  icos * xy   - zs,  icos * xz   + ys, 0.0f },
+                { icos * xy   + zs,  cos  + icos * yy,  icos * yz   - xs, 0.0f },
+                { icos * xz   - ys,  icos * yz   + xs,  cos  + icos * zz, 0.0f },
+                { 0.0f,              0.0f,              0.0f,             1.0f }
+            });
+
+            return rotationMatrix;
         }
         public static Matrix MatrixPerspectiveProjection(float fovDegress, float aspectRatio, float near, float far)
         {
             float fovRad = 1.0f / MathF.Tan(fovDegress * 0.5f / 180.0f * MathF.PI);
             Matrix mat = new Matrix(4,4);
-            mat[0, 0] = aspectRatio * fovRad;
+            mat[0, 0] = fovRad /aspectRatio;
             mat[1, 1] = fovRad;
             mat[2, 2] = far / (far - near);
             mat[2, 3] = 1.0f;
@@ -187,15 +221,13 @@ namespace _3dEngine
         }
         public static Matrix LookAt( Vec3 pos, Vec3 target, Vec3 up)
         {
-            Vec3 f = (target - pos).Normalized();
-            Vec3 s = Vec3.Cross(f, up).Normalized();
-            Vec3 u = Vec3.Cross(s, f);
+            Basis basis = new Basis( target -pos, up);
 
             return new Matrix( new float[,]{
-                { s.X, u.X, -f.X, 0 },
-                { s.Y, u.Y, -f.Y, 0},
-                { s.Z, u.Z, -f.Z, 0},
-                { -s * pos, -u * pos, f* pos, 1}});
+                { basis.X.X, basis.Y.X, -basis.Z.X, 0 },
+                { basis.X.Y, basis.Y.Y, -basis.Z.Y, 0},
+                { basis.X.Z, basis.Y.Z, -basis.Z.Z, 0},
+                { -basis.X * pos, -basis.Y * pos, basis.Z* pos, 1}});
         }
     }
 }

@@ -84,6 +84,13 @@ namespace _3dEngine
         public Vec3 X;  
         public Vec3 Y;
         public Vec3 Z;
+        public Basis() { }
+        public Basis( Vec3 Dir, Vec3 Up )
+        {
+            Z = Dir.Normalized();
+            X = Vec3.Cross(Z, Up).Normalized();
+            Y = Vec3.Cross(X,  Z).Normalized();
+        }
     }
 
     class Vec3Pool

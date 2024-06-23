@@ -10,30 +10,30 @@ namespace _3dEngine
         private Window win;
         private Random random = new Random();
 
-        private readonly int Width = 800;//screen.Width;
-        private readonly int Height = 800;//screen.Height;
+        private int Width = 1366;//screen.Width;
+        private int Height = 768;//screen.Height;
         float delta ;
 
         private Camera camera;
         private Scene scene;
         private Renderer renderer;
         private Timer timer;
-        private Vector2 Mouse ;
 
-        Cube cube;
+        Mesh mesh;
         private float camSpeed = 5f;
         public void Run()
         {
-            Mouse = new Vector2(Width /2, Height /2);
             Rectangle screen = Glfw.PrimaryMonitor.WorkArea;
            
             PrepareContext();
             win = CreateWindow("3d engine", Width, Height);
             Glfw.SetWindowPosition(win, screen.Width/2 -Width/2, screen.Height/2 -Height/2);
-            //glViewport(0, 0, Width, Height);
+            glViewport(0, 0, Width, Height);
+
             Glfw.SetCursorPositionCallback(win, MouseCallback);
             Glfw.SetMouseButtonCallback(win, MouseButtonCallback);
             Glfw.SetKeyCallback(win, KeyCallback);
+            Glfw.SetWindowSizeCallback(win, SizeCallback);
 
 
             timer = new Timer(HandleTimeout, null, 10, 1000);
@@ -57,12 +57,12 @@ namespace _3dEngine
             }
             Glfw.Terminate();
         }
-        public void Setup()
+        private void Setup()
         {
             scene = new Scene();
             camera = new Camera()
             {
-                FovDegree = 45,
+                FovDegree = 60,
                 AspectRatio = Width / (float)Height,
                 Near = 1,
                 Far = 100,
@@ -72,17 +72,24 @@ namespace _3dEngine
 
             DirectionalLight light = new DirectionalLight(1, new Vec3(0, 0, 1), new Vec3(1, 1, 1));
 
-            cube = new Cube(1);
-            scene.Add(cube);
+            mesh = Mesh.Load(@"../../../models/teapot.obj");
+            scene.Add(mesh);
+            //scene.Add(cube);
             scene.Add(light);
 
             renderer = new Renderer(camera);
         }
-        public void Update(float delta)
+        private void Update(float delta)
         {
-            cube.rotation.X += float.Pi * delta;
-            cube.rotation.Y += float.Pi * delta;
-
+            mesh.rotation.X += float.Pi * 0.2f * delta;
+            mesh.rotation.Y += float.Pi * 0.2f * delta;
+        }
+        private void SizeCallback(Window win, int width, int height)
+        {
+            Width = width;
+            Height = height;
+            glViewport(0, 0, Width, Height);
+            camera.AspectRatio = Width / (float)Height;
         }
         private void MouseButtonCallback(Window win, MouseButton button, InputState state, ModifierKeys mods)
         {
@@ -100,8 +107,8 @@ namespace _3dEngine
                 //Mouse = newMouse;
                 Glfw.SetCursorPosition(win, Width / 2, Height / 2);
 
-                camera.Dir *= Matrix.MatrixRotationY(mouseMotion.X * delta);
-                camera.Dir *= Matrix.MatrixRotationX(-mouseMotion.Y * delta);
+                camera.Dir *= Matrix.MatrixRotationY(-mouseMotion.X * delta);
+                camera.Dir *= Matrix.MatrixRotationAxis(camera.Basis.X, -mouseMotion.Y * delta);
             }
         }
         private void KeyCallback(Window window, Keys key, int scancode, InputState state, ModifierKeys mods)
@@ -120,17 +127,24 @@ namespace _3dEngine
         }
         private void ProcessInput(Window win, float delta)
         {
+            Basis camBasis = camera.Basis;
             if (Glfw.GetKey(win, Keys.Up) == InputState.Press)
-                camera.Position += new Vec3(0, camSpeed, 0) * delta;
+                camera.Position += camBasis.Y * camSpeed * delta;
 
             if (Glfw.GetKey(win, Keys.Down) == InputState.Press)
-                camera.Position += new Vec3(0, -camSpeed, 0) * delta;
+                camera.Position -= camBasis.Y * camSpeed * delta;
 
             if (Glfw.GetKey(win, Keys.D) == InputState.Press)
-                camera.Position += new Vec3(camSpeed, 0, 0) * delta;
+                camera.Position += camBasis.X * camSpeed  * delta;
 
             if (Glfw.GetKey(win, Keys.A) == InputState.Press)
-                camera.Position += new Vec3(-camSpeed, 0, 0) *delta;
+                camera.Position -= camBasis.X * camSpeed * delta;
+
+            if (Glfw.GetKey(win, Keys.W) == InputState.Press)
+                camera.Position -= camBasis.Z * camSpeed * delta;
+
+            if (Glfw.GetKey(win, Keys.S) == InputState.Press)
+                camera.Position += camBasis.Z * camSpeed * delta;
         }
         public void HandleTimeout(object state)
         {
@@ -138,7 +152,7 @@ namespace _3dEngine
         }
         public void DebugFPS()
         {
-            float fps = (1 / delta);
+            int fps = (int)(1 / delta);
             Glfw.SetWindowTitle(win, fps.ToString());
         }
         private Window CreateWindow(string title, int Width, int Height)
